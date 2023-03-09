@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="dp_16">16dp</dimen>
+    <dimen name="dp_15">15dp</dimen>
+    <dimen name="dp_20">20dp</dimen>
+    <dimen name="dp_1">1dp</dimen>
+    <dimen name="dp_150">150dp</dimen>
+    <dimen name="dp_0">0dp</dimen>
+    <dimen name="sp_18">10sp</dimen>
+</resources>
