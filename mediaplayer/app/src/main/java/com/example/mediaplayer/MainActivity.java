@@ -1,5 +1,8 @@
 package com.example.mediaplayer;
 
+import static com.example.mediaplayer.Utils.DateUtil.parseTime;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -10,6 +13,9 @@ import android.media.Image;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -51,8 +57,22 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
     private MusicListAdapter mAdapter;//歌曲适配器
     private List<Song> mList;//歌曲列表
     private RxPermissions rxPermissions;//权限请求
-    public int mCurrentPosition;
+    private int mCurrentPosition;
     private String musicData = null;
+    private MediaPlayer mediaPlayer;//音频播放器
+    private  static final int INTERNAL_TIME = 1000;//音乐进度条间隔时间
+    private Handler mHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(@NonNull Message message) {
+            //展示给进度条和当前时间
+            int progress = mediaPlayer.getCurrentPosition();
+            timeSeekBar.setProgress(progress);
+            tvPlayTime.setText(parseTime(progress));
+            //继续定时发送数据
+            updateProgress();
+            return true;
+        }
+    });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -132,14 +152,66 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         mAdapter.setOnItemClickListener(new MusicListAdapter.ItemClickListener() {
             @Override
             public void onItemClick(int position) {
-
+                mCurrentPosition = position;
+                changeMusic(mCurrentPosition);
             }
         });
+    }
+
+    private void changeMusic(int position) {
+        Log.d("cjy", "changeMusic: position" + position);
+        if (position < 0){
+            mCurrentPosition = position = mList.size() - 1;
+            Log.d("cjy", "changeMusic: mList.size()"+mList.size());
+        }else if (position > mList.size() - 1){
+            mCurrentPosition = position = 0;
+        }
+        Log.d("cjy", "changeMusic: position" + position);
+        if (mediaPlayer == null){
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setOnCompletionListener(this);//监听音乐播放完毕，自动播放下一首
+        }
+        try {
+            //释放掉之前的资源
+            mediaPlayer.reset();
+            mediaPlayer.setDataSource(mList.get(position).path);
+            tvPlaySongInfo.setText("歌名："+mList.get(position).song +
+                    "歌手："+mList.get(position).singer);
+            tvPlaySongInfo.setSelected(true); //跑马灯效果
+            playStateLay.setVisibility(View.VISIBLE);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //切歌时重置进度条并展示歌曲时长
+        timeSeekBar.setProgress(0);
+        timeSeekBar.setMax(mediaPlayer.getDuration());
+        tvTotalTime.setText(parseTime(mediaPlayer.getDuration()));
+        
+        updateProgress();
+        if (mediaPlayer.isPlaying()){
+            btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_play));
+            playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_pause_state));
+        }else {
+            btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_pause));
+            playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_play_state));
+
+        }
+    }
+
+    private void updateProgress() {
+        //使用Handle每间隔1s发送一次空消息，通知进度条更新
+        Message msg = Message.obtain();//获取一个现成的消息
+        //
+        int progress = mediaPlayer.getCurrentPosition();
+        msg.arg1 = progress;
+        mHandler.sendMessageDelayed(msg,INTERNAL_TIME);
     }
 
 
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
-
+        changeMusic(++mCurrentPosition);
     }
 }
