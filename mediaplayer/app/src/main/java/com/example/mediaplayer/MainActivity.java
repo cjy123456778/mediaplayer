@@ -37,7 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCompletionListener {
+public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCompletionListener , View.OnClickListener {
 
     private RecyclerView rvMusic;
     private Button btnScan;
@@ -100,12 +100,8 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         playStateLay = findViewById(R.id.play_state_lay);
         rxPermissions = new RxPermissions(this);//使用前先实例化
 
-        btnScan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                permissionRequest();
-            }
-        });
+        btnScan.setOnClickListener(this);
+        btnPlayOrPause.setOnClickListener(this);
 
         musicData = SPUtils.getString(Constant.MUSIC_DATA_FIRST,"yes",this);
 
@@ -136,6 +132,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
             Log.d("cjy", "initMusic: ");
         }
         Log.d("cjy", "initMusic: out");
+        Log.d("xxxxx", "initMusic: ");
         mAdapter = new MusicListAdapter();//指定适配器的布局和数据源
         mAdapter.setData(mList);
         //线性布局管理器，可以设置横向还是纵向，RecyclerView默认是纵向的，所以不用处理,如果不需要设置方向，代码还可以更加的精简如下
@@ -213,5 +210,34 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
     @Override
     public void onCompletion(MediaPlayer mediaPlayer) {
         changeMusic(++mCurrentPosition);
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.btn_play_or_pause:
+                //首次点击播放按钮，默认播放第0首，下标从0开始
+                if (mediaPlayer == null){
+                    changeMusic(0);
+                    Log.d("cjy", "onClick: null");
+                }else {
+                    if (mediaPlayer.isPlaying()){
+                        mediaPlayer.pause();
+                        btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_pause));
+                        playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_play_state));
+                        Log.d("cjy", "onClick: isPlaying");
+                    }else {
+                        mediaPlayer.start();
+                        btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_play));
+                        playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_play_state));
+                        Log.d("cjy", "onClick: is not playing");
+                    }
+                }
+                Log.d("cjyaaaa", "onClick: ");
+                break;
+            case R.id.btn_scan:
+                permissionRequest();
+                break;
+        }
     }
 }
