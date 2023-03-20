@@ -102,6 +102,9 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
 
         btnScan.setOnClickListener(this);
         btnPlayOrPause.setOnClickListener(this);
+        btnNext.setOnClickListener(this);
+        btnPreVious.setOnClickListener(this);
+        timeSeekBar.setOnSeekBarChangeListener(seekBarChangeListener);//滑动条监听
 
         musicData = SPUtils.getString(Constant.MUSIC_DATA_FIRST,"yes",this);
 
@@ -131,8 +134,6 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
             SPUtils.putString(Constant.MUSIC_DATA_FIRST,"no",this);
             Log.d("cjy", "initMusic: ");
         }
-        Log.d("cjy", "initMusic: out");
-        Log.d("xxxxx", "initMusic: ");
         mAdapter = new MusicListAdapter();//指定适配器的布局和数据源
         mAdapter.setData(mList);
         //线性布局管理器，可以设置横向还是纵向，RecyclerView默认是纵向的，所以不用处理,如果不需要设置方向，代码还可以更加的精简如下
@@ -238,6 +239,51 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
             case R.id.btn_scan:
                 permissionRequest();
                 break;
+            case R.id.btn_next:
+                changeMusic(++mCurrentPosition);
+                break;
+            case R.id.btn_previous:
+                changeMusic(--mCurrentPosition);
+                break;
         }
     }
+    //滑动条监听
+    SeekBar.OnSeekBarChangeListener seekBarChangeListener = new SeekBar.OnSeekBarChangeListener() {
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            int progress = seekBar.getProgress();
+            if(mediaPlayer!=null){
+                mediaPlayer.seekTo(progress);
+                mediaPlayer.start();
+                btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_play));
+                playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_play_state));
+            }else if (mediaPlayer == null){
+                mediaPlayer = new MediaPlayer();
+                try {
+                    mediaPlayer.setDataSource(mList.get(mCurrentPosition).path);
+//                    mediaPlayer.getDuration();
+                    mediaPlayer.prepare();
+                    timeSeekBar.setMax(mediaPlayer.getDuration());
+                    mediaPlayer.seekTo(progress);
+                    tvTotalTime.setText(parseTime(mediaPlayer.getDuration()));
+                    mediaPlayer.start();
+                    btnPlayOrPause.setBackground(getResources().getDrawable(R.mipmap.icon_play));
+                    playStateImg.setBackground(getResources().getDrawable(R.mipmap.list_play_state));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+            }
+        }
+    };
 }
